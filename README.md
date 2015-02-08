@@ -15,7 +15,9 @@ All you need to know is bundled with the installation: Just drag one of each of 
 #Screenshots
 
 Example Flow:
+
 ![Flow](./docs/flow.png)
 
 Dialog:
+
 ![Dialog](./docs/dialog.png)
