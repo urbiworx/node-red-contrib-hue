@@ -1,0 +1,219 @@
+<!--
+  Copyright 2015 Urbiworx
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+
+<script type="text/x-red" data-template-name="Hue Pull">
+    <div class="form-row">
+        <label for="node-input-serverid"><i class="fa fa-lightbulb-o"></i> Server</label>
+		<input type="text" id="node-input-serverid" style="width: 250px;">
+        </input>
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceid"><i class="fa fa-lightbulb-o"></i> Device</label>
+		<input type="text" id="node-input-deviceid" style="width: 250px;">
+        </input>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+		<input type="text" id="node-input-name" style="width: 250px;">
+        </input>
+    </div>
+    <div class="form-tips" id="node-warning" style="display: none"><b> Tip:</b> If no collection is set, ensure <b>msg.collection</b> will contain the collection name
+    </div>
+</script>
+
+<script type="text/x-red" data-template-name="Hue Set">
+    <div class="form-row">
+        <label for="node-input-serverid"><i class="fa fa-lightbulb-o"></i> Server</label>
+		<input type="text" id="node-input-serverid" style="width: 250px;">
+        </input>
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceid"><i class="fa fa-lightbulb-o"></i> Device</label>
+		<input type="text" id="node-input-deviceid" style="width: 250px;">
+        </input>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+		<input type="text" id="node-input-name" style="width: 250px;">
+        </input>
+    </div>
+    <div class="form-tips" id="node-warning" style="display: none"><b> Tip:</b> If no collection is set, ensure <b>msg.collection</b> will contain the collection name
+    </div>
+</script>
+
+
+<script type="text/x-red" data-help-name="Hue Pull">
+    <p>Returns the current state of the selected device<br/>Example:<br/>
+<pre>
+{  
+   "state":{  
+      "on":true,
+      "bri":1,
+      "hue":46353,
+      "sat":249,
+      "xy":[  
+         0.1448,
+         0.0964
+      ],
+      "alert":"none",
+      "effect":"none",
+      "colormode":"xy",
+      "reachable":true
+   },
+   "type":"Color light",
+   "name":"Color light 3",
+   "modelid":"LLC011",
+   "uniqueid":"...",
+   "swversion":"66009461",
+   "pointsymbol":{  
+      "1":"none",
+      "2":"none",
+      "3":"none",
+      "4":"none",
+      "5":"none",
+      "6":"none",
+      "7":"none",
+      "8":"none"
+   }
+}
+</pre>
+	</p>
+</script>
+
+<script type="text/x-red" data-help-name="Hue Set">
+    <p>Sets the state of the selected device. Please see the documentation of the underlying API for options: <a href="https://github.com/peter-murray/node-hue-api#lightstate-options">API docs</a>.<br/>
+	Example (function node):<br/>
+<pre>
+msg.payload={
+	"on":[true],
+	"transitiontime":[0],
+	"bri":[1],
+	"rgb":[75,75,255]
+}
+return msg;	
+</pre>
+	</p>
+</script>
+
+<script type="text/javascript">
+
+	function generatePreparator(){
+		return function(){
+			var valueserver=$('#node-input-serverid').val();
+			var valuedevice=$('#node-input-deviceid').val();
+			$("#node-input-serverid").replaceWith('<select id="node-input-serverid" name="node-input-serverid" style="width: 250px;">');
+			$("#node-input-deviceid").replaceWith('<select id="node-input-deviceid" name="node-input-deviceid" style="width: 250px;">');
+			$('#node-input-serverid').find('option').remove();
+			
+			var deviceRefresh=function(){
+				if ($('#node-input-serverid').val()==null){
+					return;
+				}
+				$('#node-input-deviceid').find('option').remove();
+				$.ajax({
+				  url: "/philipshue?devices="+$('#node-input-serverid').val(),
+				  success: function(data) {
+					var data=JSON.parse(data);
+						if (data.error===1){
+							$("#node-dialog-cancel").click();
+							$("<div>Please press the sync button on your hue first.</div>").dialog();
+							return;
+						}
+						$.each( data, function( key, value ) {
+							$('#node-input-deviceid').find('option').end().append('<option value="'+key+'">'+value.name+'</option>');
+						});
+						$('#node-input-deviceid').val(valuedevice);
+					}
+				});
+			};
+			$("#node-input-serverid").change(deviceRefresh);
+			refresh(function(){
+				$('#node-input-serverid').val(valueserver);
+				deviceRefresh();
+				/*
+				$("#node-input-devicetype").change(function(){
+					$('#node-input-serverid').find('option').remove();
+					refresh();
+				});*/
+			});
+			function refresh(listener){
+				$.ajax({
+				  url: "/philipshue?server=true",
+				  success: function(data) {
+					var data=JSON.parse(data);/*
+					if (data.noconfig){
+						$("#node-dialog-cancel").click();
+						$("<div>Please configure your smarthome system first:<a href='/rwesmarthome?config=true' target='_config'>config</a></div>").dialog();
+						return;
+					}
+					if (data.notloggedin){
+						$("#node-dialog-cancel").click();
+						$("<div>You are not yet logged in. Please try again in a few seconds. Otherwise check if your password is correct:<a href='/rwesmarthome?config=true' target='_config'>config</a></div>").dialog();
+						return;
+					}*/
+					for (var i=0;i<data.length;i++) {
+						$('#node-input-serverid').find('option').end().append('<option value="'+data[i].id+'">'+data[i].name+'</option>');
+					}
+					if (typeof(listener)!=="undefined"){
+						listener();
+					}
+				 }
+				});
+			};
+		}
+	};
+    RED.nodes.registerType('Hue Pull', {
+        category: 'advanced',
+        color: "rgb(218, 196, 180)",
+        defaults: {
+			deviceid: {value: ""},
+            serverid: {value: ""},
+			name: {value: ""}
+        },
+        inputs: 1,
+        outputs: 2,
+        icon: "feed.png",
+        label: function() {
+			return this.name||"Hue Data Pull";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: generatePreparator()
+    });
+    RED.nodes.registerType('Hue Set', {
+        category: 'advanced',
+        color: "rgb(218, 196, 180)",
+        defaults: {
+			deviceid: {value: ""},
+            serverid: {value: ""},
+			name: {value: ""}
+        },
+        inputs: 1,
+        outputs: 2,
+        icon: "feed.png",
+        label: function() {
+			return this.name||"Hue Set Device";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: generatePreparator()
+    });
+	
+
+</script>
