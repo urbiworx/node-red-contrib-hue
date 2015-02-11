@@ -71,13 +71,18 @@ module.exports = function(RED) {
 			for (var item in msg.payload){
 				lightState=lightState[item].apply(lightState,msg.payload[item]);
 			}
-			api.setLightState(that.deviceid,lightState,function(err, lights) {
+			var resultFunction=function(err, lights) {
 				if (err){
 					that.send([null,{payload:err}]);
 				} else {
 					that.send([{payload:lights},null]);
 				}
-			});
+			}
+			if (that.deviceid.indexOf("g-")==0){
+				api.setGroupLightState(that.deviceid.substring(2),lightState,resultFunction);
+			} else {
+				api.setLightState(that.deviceid,lightState,resultFunction);
+			}
 		});
     }
 	RED.nodes.registerType("Hue Set",HueNodeSet);
@@ -106,7 +111,7 @@ module.exports = function(RED) {
 					var api=new hue.HueApi(ip,config[reqparsed.query.devices]);
 					api.getFullState(function(err, config) {
 						if (err) throw err;
-						res.end(JSON.stringify(config.lights));
+						res.end(JSON.stringify({lights:config.lights,groups:config.groups}));
 					});	
 				}
 				

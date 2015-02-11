@@ -133,8 +133,13 @@ return msg;
 							$("<div>Please press the sync button on your hue first.</div>").dialog();
 							return;
 						}
-						$.each( data, function( key, value ) {
+						$.each( data.lights, function( key, value ) {
 							$('#node-input-deviceid').find('option').end().append('<option value="'+key+'">'+value.name+'</option>');
+						});
+						$('#node-input-deviceid').find('option').end().append('<option disabled>----------</option>');
+						$('#node-input-deviceid').find('option').end().append('<option value="g-0">All</option>');
+						$.each( data.groups, function( key, value ) {
+							$('#node-input-deviceid').find('option').end().append('<option value="g-'+key+'">'+value.name+'</option>');
 						});
 						$('#node-input-deviceid').val(valuedevice);
 					}
