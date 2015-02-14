@@ -94,55 +94,39 @@ module.exports = function(RED) {
 			}
 		}
 	}
-    function callback(req,res) {
-		try{
-			var reqparsed=urllib.parse(req.url, true);
-			
-			if (reqparsed.query.server==="true"){
-				hue.nupnpSearch(function(err, result) {
-					if (err) throw err;
-					upnpresult=result;
-					res.end(JSON.stringify(result));
-				});
-				return;
-			} 
-			else if (typeof(reqparsed.query.devices)!=="undefined"){
-				var returnDevices=function(){
-					var api=new hue.HueApi(ip,config[reqparsed.query.devices]);
-					api.getFullState(function(err, config) {
-						if (err) throw err;
-						res.end(JSON.stringify({lights:config.lights,groups:config.groups}));
-					});	
-				}
-				
-				var ip=getIpForServer(reqparsed.query.devices);
-				if(typeof(config[reqparsed.query.devices])==="undefined"){
-					(new hue.HueApi()).createUser(ip, null, "Node RED", function(err, user) {
-						if (err!=null){
-							res.end(JSON.stringify({error:1}));
-							return;
-						}
-						config[reqparsed.query.devices]=user;
-						fs.writeFile("./hue.config",JSON.stringify(config));
-						returnDevices();
-					});
-				} else {
-					returnDevices();
-				}
-				
-			}
-			else {	
-				res.end("");
-			}
-		} catch (e) {console.log(e);res.end("");}
-	}
-	function errorHandler(err,req,res,next) {
-	        res.end(JSON.stringify(err));
-           
-	};
-	function corsHandler(req,res,next) { next(); }
 	
-	RED.httpNode.get("/philipshue",corsHandler,callback,errorHandler);
-
+	RED.httpAdmin.get('/philipshue/server', function(req, res, next){
+		hue.nupnpSearch(function(err, result) {
+			if (err) throw err;
+			upnpresult=result;
+			res.end(JSON.stringify(result));
+		});
+		return;
+	});
+	RED.httpAdmin.get('/philipshue/devices/:serverid', function(req, res, next){
+		var returnDevices=function(){
+			var api=new hue.HueApi(ip,config[req.params.serverid]);
+			api.getFullState(function(err, config) {
+				if (err) throw err;
+				res.end(JSON.stringify({lights:config.lights,groups:config.groups}));
+			});	
+		}
+		
+		var ip=getIpForServer(req.params.serverid);
+		if(typeof(config[req.params.serverid])==="undefined"){
+			(new hue.HueApi()).createUser(ip, null, "Node RED", function(err, user) {
+				if (err!=null){
+					res.end(JSON.stringify({error:1}));
+					return;
+				}
+				config[req.params.serverid]=user;
+				fs.writeFile("./hue.config",JSON.stringify(config));
+				returnDevices();
+			});
+		} else {
+			returnDevices();
+		}		
+	});
+    
 	
 }

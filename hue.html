@@ -125,7 +125,7 @@ return msg;
 				}
 				$('#node-input-deviceid').find('option').remove();
 				$.ajax({
-				  url: "/philipshue?devices="+$('#node-input-serverid').val(),
+				  url: "philipshue/devices/"+$('#node-input-serverid').val(),
 				  success: function(data) {
 					var data=JSON.parse(data);
 						if (data.error===1){
@@ -157,19 +157,9 @@ return msg;
 			});
 			function refresh(listener){
 				$.ajax({
-				  url: "/philipshue?server=true",
+				  url: "philipshue/server",
 				  success: function(data) {
-					var data=JSON.parse(data);/*
-					if (data.noconfig){
-						$("#node-dialog-cancel").click();
-						$("<div>Please configure your smarthome system first:<a href='/rwesmarthome?config=true' target='_config'>config</a></div>").dialog();
-						return;
-					}
-					if (data.notloggedin){
-						$("#node-dialog-cancel").click();
-						$("<div>You are not yet logged in. Please try again in a few seconds. Otherwise check if your password is correct:<a href='/rwesmarthome?config=true' target='_config'>config</a></div>").dialog();
-						return;
-					}*/
+					var data=JSON.parse(data);
 					for (var i=0;i<data.length;i++) {
 						$('#node-input-serverid').find('option').end().append('<option value="'+data[i].id+'">'+data[i].name+'</option>');
 					}
