@@ -45,13 +45,23 @@ module.exports = function(RED) {
 				that.ip=getIpForServer(this.serverid);
 			}
 			var api=new hue.HueApi(that.ip,config[that.serverid]);
-			api.lightStatus(that.deviceid, function(err, result) {
-				if (err){
-					that.send([null,{payload:err}]);
-				} else {
-					that.send([{payload:result},null]);
-				}
-			});
+			if (that.deviceid.indexOf("g-")==0){
+				api.getGroup(that.deviceid.substring(2),function(err, result) {
+					if (err){
+						that.send([null,{payload:err}]);
+					} else {
+						that.send([{payload:result.lastAction},null]);
+					}
+				});
+			} else {
+					api.lightStatus(that.deviceid, function(err, result) {
+					if (err){
+						that.send([null,{payload:err}]);
+					} else {
+						that.send([{payload:result},null]);
+					}
+				});
+			}
 		});
     }
     RED.nodes.registerType("Hue Pull",HueNodeOut);
