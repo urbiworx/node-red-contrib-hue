@@ -22,7 +22,12 @@ module.exports = function(RED) {
 	var upnpresult=new Array();
 	var config=null;
 	
-	fs.readFile('./hue.config', function (err, data) {
+	var userDir="";
+	if (RED.settings.userDir){
+		userDir=RED.settings.userDir+"/";
+	} 
+	
+	fs.readFile(userDir+'hue.config', function (err, data) {
 		if (err!=null){
 			config={};
 			return;
@@ -130,7 +135,7 @@ module.exports = function(RED) {
 					return;
 				}
 				config[req.params.serverid]=user;
-				fs.writeFile("./hue.config",JSON.stringify(config));
+				fs.writeFile(userDir+"hue.config",JSON.stringify(config));
 				returnDevices();
 			});
 		} else {
